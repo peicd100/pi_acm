@@ -1,0 +1,24 @@
+{
+  "name": "pi-acm-passive",
+  "version": "1.4.0",
+  "private": true,
+  "description": "Deterministic no-summary automatic context sliding for Pi",
+  "type": "module",
+  "license": "UNLICENSED",
+  "keywords": ["pi-package", "pi-extension", "context-management", "acm"],
+  "repository": { "type": "git", "url": "https://github.com/peicd100/pi_acm.git" },
+  "homepage": "https://github.com/peicd100/pi_acm#readme",
+  "bugs": { "url": "https://github.com/peicd100/pi_acm/issues" },
+  "engines": { "node": ">=22" },
+  "files": ["extensions/", "src/", "policy.json", "README.md", "CHANGELOG.md", "LICENSE", "NOTICE.md", "docs/"],
+  "pi": { "extensions": ["./extensions/index.ts", "./extensions/no-summary-guard.ts"], "skills": [] },
+  "peerDependencies": { "@earendil-works/pi-coding-agent": "*", "@earendil-works/pi-ai": "*" },
+  "dependencies": { "gpt-tokenizer": "3.4.0" },
+  "devDependencies": { "@earendil-works/pi-coding-agent": "1.1.0", "@earendil-works/pi-ai": "1.1.0" },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "check:package": "node scripts/check-package.mjs",
+    "test:install": "node scripts/test-install.mjs",
+    "test:remote": "node scripts/test-install.mjs --remote"
+  }
+}

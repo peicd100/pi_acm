@@ -1,0 +1,9 @@
+License selection pending
+=========================
+
+This repository does not yet grant a general open-source license for its own
+code. Its package metadata intentionally uses UNLICENSED until the maintainer
+confirms ownership, any upstream license obligations, and an explicit license
+choice. Do not interpret Git installation support as an open-source license.
+
+Third-party dependencies retain their respective licenses. See NOTICE.md.

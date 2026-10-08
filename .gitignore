@@ -1,0 +1,12 @@
+node_modules/
+*.tgz
+coverage/
+*.log
+.env
+.env.*
+!.env.example
+.peicd100/codex/
+.peicd100/codex_compressed/
+AGENTS.md
+.DS_Store
+Thumbs.db
