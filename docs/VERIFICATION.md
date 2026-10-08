@@ -1,6 +1,15 @@
 # 本次包裝驗證
 
-## 已驗證
+## GitHub 發布與實際安裝驗證
+
+- 公開 repo：<https://github.com/peicd100/pi_acm>。
+- 已發布 `v1.4.0` tag，release commit：`fad62b94a4c338b2cc52554363fb09f636ecaa76`。
+- `npm run test:remote` 通過：直接從公開 GitHub 安裝 `git:github.com/peicd100/pi_acm@v1.4.0`，安裝後 HEAD 與 release commit 一致。
+- 驗證真正 Pi Git install／固定 tag／list／兩個 extensions load／remove，runtime tokenizer 有安裝，沒有複製 Pi host libraries。
+- 使用 disposable Pi 設定目錄與空白／非 ASCII 路徑；沒有修改個人 Pi 設定，也沒有呼叫 provider。
+- 原有 `1.txt` 暫存 entry 保留且未加入 release commit；個人 AGENTS／PEICD／credentials 未發布。
+
+## 套件化階段已驗證
 
 環境：Windows、Node.js `24.13.1`、Pi SDK `1.1.0`。
 
@@ -18,9 +27,9 @@
 
 ## 尚未驗證／發布前事項
 
-- GitHub remote 安裝：必須先推送程式碼與 tag，再在新的測試環境驗證。
+- GitHub remote 安裝已通過上方的實際驗證；live-provider 測試與跨平台 CI 是另外的驗證範圍。
 - Linux／macOS 與 Node.js 22：已提供 CI workflow，尚未執行遠端 CI。
 - Live provider 與實際 backend 容量：mock tests 不代表 backend qualification。
 - 授權／upstream provenance：待維護者確認，暫標 `UNLICENSED`。
 
-既有 `1.txt` index／working-tree 差異未更動；本次未建立本專案 commit、push、GitHub release 或遠端 tag。
+套件化階段沒有 commit／push；後續依維護者明確授權建立發布 commit，並推送 main 與 `v1.4.0`。未建立額外 GitHub Release 頁面，Pi Git 安裝只需要 repo 與 tag。
