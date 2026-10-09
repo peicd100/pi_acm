@@ -1,3 +1,13 @@
+# Verification — 1.4.2 idle auto-init
+
+- Targeted21/21 and full mocked84/84 PASS, no real model/provider traffic.
+- Real SDK TUI lifecycle proves startup-command-reload without model/transcript prompt, reported openai/luna272k greeting, custom ratio/model switch, busy/queued deferral, decline/confirm and reload rollback.
+- Pure planner tests prove selected-model-only writes, explicit disabled/custom consent, stale file/model consent rejection, lock/CAS rollback, project trust/percentage protection and invalid global tokens blocked.
+- Exact-array quiet cancellation remains one-shot abort, never approval. Package and disposable local Git install/tag/list/load/remove PASS.
+- Public refs/install and exact-commit multi-OS CI are recorded in the workspace release task, not inferred from local tests.
+
+## Historical evidence (not current execution authority)
+
 # Verification — 1.4.1
 
 ## Current release local evidence

@@ -9,7 +9,7 @@ import { MARKER, validatePolicy, createCounter, previewMessage, messageKey,
   selectWindow, branchState, applyLegacyRows, applyCursor, assertPairing, atomicGroups, omitFailedAttempts } from '../src/window_v1.4.1.mjs';
 import { CALIBRATION_TYPE, createCalibration, modelKey } from '../src/calibration.mjs';
 import { CONFIG_USAGE, parseConfigCommand, policyForSettings, nativeBudget, assertNativeSettings,
-  commitConfig, rollbackConfig } from '../src/config_v1.4.1.mjs';
+  commitConfig, rollbackConfig, inspectSetup, commitSetup } from '../src/config_v1.4.2.mjs';
 
 export default function passiveWindow(pi: ExtensionAPI) {
   // Invalid policy prevents this extension loading; config/resource smoke is required before activation.
@@ -18,9 +18,35 @@ export default function passiveWindow(pi: ExtensionAPI) {
   const refreshPolicy = () => { policy = validatePolicy(policyForSettings(basePolicy, pi.getSettings())); return policy; };
   const counter = createCounter(basePolicy);
   let fault: string | undefined;
-  let last: any = { version: '1.4.1', windowMode: 'automatic', manualCheckpointRequired: false,
+  let last: any = { version: '1.4.2', windowMode: 'automatic', manualCheckpointRequired: false,
     before: 0, after: 0, slides: 0, phase: 'startup' };
   let displayedNative: string | undefined;
+  let setupQueued=false, setupBusy=false, setupStopped=false;
+  let setupImmediate: ReturnType<typeof setImmediate> | undefined;
+  const attemptedSetup=new Set<string>(), notices=new Set<string>();
+  const notifyOnce=(ctx:ExtensionContext,text:string)=>{if(!notices.has(text)){notices.add(text);ctx.ui.notify(text,'warning');}};
+  const setupOptions=(ctx:ExtensionContext)=>({path:join(getAgentDir(),'settings.json'),cwd:ctx.cwd,
+    projectTrusted:ctx.isProjectTrusted(),runtimeSettings:pi.getSettings(),model:ctx.model,base:basePolicy});
+  function scheduleSetup(ctx:ExtensionContext) {
+    if(setupStopped||setupQueued||setupBusy||ctx.mode!=='tui'||!ctx.model||!ctx.isIdle()||ctx.hasPendingMessages())return;
+    try {assertNativeSettings(pi.getSettings(),ctx.model,refreshPolicy());return;}
+    catch(error:any){if(error.code!=='ACM_NATIVE_SETUP_REQUIRED'){notifyOnce(ctx,'ACM 設定無效；請閒置 /acm-setup 檢查，未自動寫入。');return;}}
+    const signature=JSON.stringify([ctx.model.provider,ctx.model.id,ctx.model.contextWindow,pi.getSettings().acm,pi.getSettings().compaction]);
+    if(attemptedSetup.has(signature))return;
+    setupQueued=true;
+    setupImmediate=setImmediate(()=>{
+      setupImmediate=undefined;setupQueued=false;
+      if(setupStopped)return;
+      try {
+        if(!ctx.isIdle()||ctx.hasPendingMessages())return;
+        if(!pi.getCommands().some(c=>c.name==='acm-setup'))return;
+        attemptedSetup.add(signature);
+        // Documented command dispatch: no transcript/model prompt for a registered command.
+        // Reload is command-only; never await it from a lifecycle handler.
+        pi.sendUserMessage('/acm-setup auto',{expandPromptTemplates:true});
+      }catch{ /* stale lifecycle ctx: next fresh boundary or explicit command may retry */ }
+    });
+  }
   const renderNativeStatus = (ctx: ExtensionContext) => {
     const native = ctx.getContextUsage();
     const percent = native?.percent;
@@ -107,12 +133,12 @@ export default function passiveWindow(pi: ExtensionAPI) {
 
   pi.on('session_start', (event, ctx) => {
     fault = undefined;
-    last = { version: '1.4.1', windowMode: 'automatic', manualCheckpointRequired: false,
+    last = { version: '1.4.2', windowMode: 'automatic', manualCheckpointRequired: false,
       before: 0, after: 0, slides: 0, phase: 'startup' };
     try {
       refreshPolicy();
       const percentages = (pi.getSettings() as any).acm ?? { triggerPercent: 95, targetPercent: 85 };
-      if (event.reason === 'reload') ctx.ui.notify(`ACM 1.4：觸發 ${percentages.triggerPercent}％／保留目標 ${percentages.targetPercent}％ 已載入；窗口邊界未變更。`, 'info');
+      // Initialization/config commands provide their own one-line notice.
     } catch (error) { fail(ctx, error); }
     pending = undefined;
     inFlight.clear();
@@ -120,6 +146,7 @@ export default function passiveWindow(pi: ExtensionAPI) {
     ctx.ui.setStatus('acm', undefined);
     displayedNative = undefined;
     renderNativeStatus(ctx);
+    scheduleSetup(ctx);
   });
   // Commands only, never registered as model tools. Latest user and latest complete tool batch are automatic anchors.
   pi.registerCommand('acm-status', {
@@ -133,7 +160,7 @@ export default function passiveWindow(pi: ExtensionAPI) {
     },
   });
   pi.registerCommand('acm-config', {
-    description: '查看或永久設定觸發／保留比例：/acm-config [80 70|reset]（不呼叫模型）',
+    description: '查看或永久設定觸發／保留比例：/acm-config [95 85|reset]（不呼叫模型）',
     handler: async (args, ctx) => {
       let receipt: any;
       try {
@@ -177,6 +204,43 @@ export default function passiveWindow(pi: ExtensionAPI) {
       }
     },
   });
+
+  pi.registerCommand('acm-setup',{
+    description:'閒置時初始化目前模型；沿用比例、衝突才確認，不呼叫模型',
+    handler:async(args,ctx)=>{
+      if(args.trim()&&!['auto'].includes(args.trim())){ctx.ui.notify('用法：/acm-setup','warning');return;}
+      if(setupBusy)return;
+      const idle=()=>{if(!ctx.isIdle()||ctx.hasPendingMessages())throw new Error('ACM：請等模型／工具完成且佇列清空後再 /acm-setup，未變更設定。');};
+      let receipt:any;
+      setupBusy=true;
+      try{
+        idle();await ctx.waitForIdle();idle();
+        const plan=inspectSetup(setupOptions(ctx));
+        if(plan.kind==='ready'){fault=undefined;if(args.trim()!=='auto')ctx.ui.notify('ACM：目前模型已同步，未重寫設定。','info');return;}
+        if(plan.kind==='blocked')throw new Error(plan.reason);
+        let confirmed=false;
+        if(plan.kind==='conflict'){
+          if(ctx.mode!=='tui')throw new Error('ACM：有明確設定衝突，請在 TUI /acm-setup 確認。');
+          confirmed=await ctx.ui.confirm('ACM 初始化設定衝突',`${plan.reason}。沿用 ${plan.percentages.triggerPercent}/${plan.percentages.targetPercent}，啟用 compaction 並同步 ${plan.key} 的 reserve ${plan.budget.reserve} / keep ${plan.budget.target}？其他模型與全域 token budget 不改。`);
+          if(!confirmed){notifyOnce(ctx,'ACM：保留原設定，尚未初始化；可閒置 /acm-setup 再確認。');return;}
+        }
+        idle();
+        receipt=commitSetup(setupOptions(ctx),{fingerprint:plan.fingerprint,confirmed});
+        if(!receipt)return;
+        if(receipt.lockCleanupWarning)ctx.ui.notify(receipt.lockCleanupWarning,'warning');
+        ctx.ui.notify(`ACM 已初始化：${plan.percentages.triggerPercent}／${plan.percentages.targetPercent}；同步目前模型並重新載入。`,'info');
+      }catch(error:any){notifyOnce(ctx,error.message??'ACM 初始化失敗；未放行模型請求。');return;}
+      finally{setupBusy=false;}
+      try{await ctx.reload();return;}
+      catch(error){
+        try{rollbackConfig(receipt);}catch{ /* CAS prevents overwriting concurrent changes; next guard remains closed */ }
+        throw new Error('ACM 初始化 reload 失敗；請閒置 /reload 後 /acm-setup，未放行未同步請求。',{cause:error});
+      }
+    },
+  });
+  pi.on('model_select',(_event,ctx)=>scheduleSetup(ctx));
+  pi.on('agent_settled',(_event,ctx)=>scheduleSetup(ctx));
+  pi.on('session_shutdown',()=>{setupStopped=true;if(setupImmediate){clearImmediate(setupImmediate);setupImmediate=undefined;}setupQueued=false;});
 
   // Native threshold/overflow estimates are hints, not permission to discard work.
   // The SAME request-local selector below owns the window. Its durable cursor is
@@ -248,7 +312,14 @@ export default function passiveWindow(pi: ExtensionAPI) {
       renderNativeStatus(ctx);
       pi.events.emit('acm-passive:request-ready', { messages, estimatedTokens: after });
       return { messages };
-    } catch (error) {
+    } catch (error:any) {
+      if(error.code==='ACM_NATIVE_SETUP_REQUIRED'){
+        fault=error.message;pending=undefined;
+        try{ctx.abort();}catch{ /* independent guard also aborts this exact blocked request */ }
+        pi.events.emit('acm-passive:request-blocked',{messages:event.messages});
+        notifyOnce(ctx,'ACM 尚未同步目前模型；請等自動初始化完成，或閒置 /acm-setup。請求已取消，不使用 AI 摘要。');
+        return;
+      }
       fail(ctx, error);
       throw error;
     }

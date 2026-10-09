@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.4.2 — Idle automatic initialization
+
+- Automatically initialize fresh interactive TUI profiles (95/85), preserve custom ratios and synchronize newly selected models only at idle/empty-queue boundaries.
+- Add /acm-setup; use documented command dispatch/reload, not private SDK setters or lifecycle reload calls. Init does not become a model prompt.
+- Write selected-model overrides and ownership only; keep ordinary budgets and other models. Ask before explicit budget/disabled conflicts, block trusted-project conflicts, and never read untrusted project settings.
+- Keep atomic lock/CAS, stale-consent rejection and rollback protections. No automatic personal writes in SDK/print/RPC.
+- Quietly cancel expected unsynchronized requests without duplicate producer/guard stacks; exact-array one-shot guard still aborts, never approves.
+- Retain immutable config1.4.1/window1.4.1; new config_v1.4.2 for reload safety. No sliding algorithm or summary fallback change.
+
 ## 1.4.1 — Default 95/85
 
 - Set fresh-install, pure-engine and `/acm-config reset` defaults to 95% trigger / 85% target.

@@ -146,7 +146,7 @@ test('guard loads without a tokenizer or base policy and still cancels every sum
     mkdirSync(join(cwd, 'src'));
     const path = join(cwd, 'extensions', 'no-summary-guard.ts');
     cpSync(guard, path);
-    cpSync(fileURLToPath(new URL('../src/config_v1.4.1.mjs', import.meta.url)), join(cwd, 'src', 'config_v1.4.1.mjs'));
+    cpSync(fileURLToPath(new URL('../src/config_v1.4.2.mjs', import.meta.url)), join(cwd, 'src', 'config_v1.4.2.mjs'));
     const bus = createEventBus();
     const loaded = await loadExtensions([path], cwd, bus);
     assert.deepEqual(loaded.errors, []);

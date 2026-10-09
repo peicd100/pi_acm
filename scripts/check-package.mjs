@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, existsSync, lstatSync, readdirSync } from 'node:fs';
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url)));
 assert.equal(pkg.name, 'pi-acm-passive');
-assert.equal(pkg.version, '1.4.1');
+assert.equal(pkg.version, '1.4.2');
 assert.deepEqual(pkg.pi.extensions, ['./extensions/index.ts', './extensions/no-summary-guard.ts']);
 assert.deepEqual(pkg.pi.skills, []);
 assert(pkg.keywords.includes('pi-package'));
