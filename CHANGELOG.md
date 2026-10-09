@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.4.1 — Default 95/85
+
+- Set fresh-install, pure-engine and `/acm-config reset` defaults to 95% trigger / 85% target.
+- Preserve explicit user percentages and all no-summary, task-anchor and tool-pairing protections.
+- Use versioned window/config modules for same-process reload safety; add default/reload regression tests.
+
 ## 1.4.0 — Git distribution packaging
 
 - Package the existing passive 1.4.0 no-summary sliding-window implementation.

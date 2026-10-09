@@ -45,10 +45,10 @@ git add .gitignore .gitattributes .github package.json package-lock.json README.
 完成授權、檔案與 index 審查後才操作：
 
 ```sh
-git commit -m "Package passive ACM 1.4.0 for Pi Git installation"
+git commit -m "Package passive ACM 1.4.1 for Pi Git installation"
 git push origin HEAD
-git tag v1.4.0
-git push origin v1.4.0
+git tag v1.4.1
+git push origin v1.4.1
 ```
 
 這些命令須由維護者自行執行或另外明確授權；若 tag 已存在，不要覆蓋或 force push，改用新的版本號。
@@ -60,11 +60,11 @@ git push origin v1.4.0
 也可在全新／可拋棄的 Pi 使用者環境手動測試：
 
 ```sh
-pi install git:github.com/peicd100/pi_acm@v1.4.0
+pi install git:github.com/peicd100/pi_acm@v1.4.1
 pi list
 ```
 
-啟動 Pi，在 idle 時執行 `/acm-status`、`/acm-config 80 70`，確認兩個 extensions 載入無錯誤。測試 provider 時會使用該測試環境的 credentials 並可能產生費用；先確認授權與 budget。卸載也應驗證；package 移除不會還原 ACM-owned user settings。
+啟動 Pi，在 idle 時執行 `/acm-status`、`/acm-config 95 85`，確認兩個 extensions 載入無錯誤。測試 provider 時會使用該測試環境的 credentials 並可能產生費用；先確認授權與 budget。卸載也應驗證；package 移除不會還原 ACM-owned user settings。
 
 ## 後續版本
 

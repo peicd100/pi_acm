@@ -1,3 +1,14 @@
+# Verification — 1.4.1
+
+## Current release local evidence
+
+- Full mocked suite: 66/66 PASS; no provider calls or actual webhook delivery.
+- Package/public checks and disposable local Pi Git install/tag/list/load/remove PASS.
+- Fresh/reset95/85＋preserved custom percentages＋versioned same-process reload PASS.
+- Remote publication/CI evidence is tracked in the workspace release record; do not infer it from local tests.
+
+## Historical release evidence (superseded for current runtime/version)
+
 # 本次包裝驗證
 
 ## GitHub 發布與實際安裝驗證

@@ -1,9 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { countTokens } from 'gpt-tokenizer';
-import { DEFAULT_POLICY as P, MARKER, budgets, validatePolicy, createCounter, previewMessage,
+import { DEFAULT_POLICY as DEFAULT_P, MARKER, budgets, validatePolicy, createCounter, previewMessage,
   selectWindow, assertPairing, atomicGroups, branchState, applyCursor, messageKey } from '../src/window.mjs';
 
+const P = { ...DEFAULT_P, triggerRatio: 0.85, targetRatio: 0.75 };
 const row = (id, role, content) => ({ id, message: { role, content, timestamp: Number(id.replace(/\D/g, '')) || 1 } });
 const tc = (id, name = 'read') => ({ type: 'toolCall', id, name, arguments: { path: `file-${id}` } });
 const tr = (id, text = 'ok') => ({ id: `result-${id}`, message: { role: 'toolResult', toolCallId: id, toolName: 'read', content: [{ type: 'text', text }] } });
@@ -11,8 +12,8 @@ const deterministic = { tokens: m => m.testTokens ?? 20 };
 const policy = { ...P, requestMargin: 20 };
 function weighted(id, n, role = 'assistant') { return { id, message: { role, content: [{ type: 'text', text: id }], testTokens: n } }; }
 
-test('272k gives 231200 trigger / 204000 target / 40800 reserve', () => {
-  assert.deepEqual(budgets(272000), { capacity: 272000, trigger: 231200, target: 204000, reserve: 40800 });
+test('explicit historical85/75 profile at272k gives231200 trigger /204000 target /40800 reserve', () => {
+  assert.deepEqual(budgets(272000, P), { capacity: 272000, trigger: 231200, target: 204000, reserve: 40800 });
   assert.equal(budgets(1000000).capacity, 272000);
   assert.throws(() => validatePolicy({ ...P, noSummary: false }));
   assert.throws(() => budgets(null));

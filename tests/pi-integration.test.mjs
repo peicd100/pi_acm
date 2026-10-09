@@ -17,7 +17,7 @@ const zeroUsage = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalToken
 const assistant = (model, content, usage = zeroUsage) => ({ role: 'assistant', api: model.api,
   provider: model.provider, model: model.id, content, usage, stopReason: content.some(x => x.type === 'toolCall') ? 'toolUse' : 'stop', timestamp: Date.now() });
 
-async function fixture({ enabled = true, acm, fileSettings = false, modelContext = 272000, keepRecentTokens = modelContext === 1050000 ? 735000 : 190400, guardOnly = false, tools = [], sessionManager, uiContext, modelRuntime: reuseRuntime } = {}) {
+async function fixture({ enabled = true, acm = { triggerPercent: 80, targetPercent: 70 }, fileSettings = false, modelContext = 272000, keepRecentTokens = modelContext === 1050000 ? 735000 : 190400, guardOnly = false, tools = [], sessionManager, uiContext, modelRuntime: reuseRuntime } = {}) {
   const temp = await mkdtemp(join(tmpdir(), 'pi-acm-fixture-'));
   const guard = fileURLToPath(new URL('../extensions/no-summary-guard.ts', import.meta.url));
   let extensions = await loadExtensions(guardOnly ? [guard] : [extension, guard], temp);
@@ -601,7 +601,7 @@ test('config persists ratios, synchronizes native settings and both extensions t
     assert.equal(captured.length, 0);
     await f.configCommand('/acm-status');
     const status = JSON.parse(notices.at(-1));
-    assert.equal(status.version, '1.4.0');
+    assert.equal(status.version, '1.4.1');
     assert.equal(status.policy.triggerRatio, 0.85);
     assert.equal(status.policy.targetRatio, 0.75);
     assert.equal(f.extensions.extensions.length, 2);
@@ -610,8 +610,9 @@ test('config persists ratios, synchronizes native settings and both extensions t
     assertPairing(captured[0].messages);
     const beforeReset = JSON.stringify(branchState(seeded.manager.getBranch()).state);
     await f.configCommand('/acm-config reset');
-    assert.deepEqual(f.settingsManager.getSettings().acm, { triggerPercent: 80, targetPercent: 70 });
-    assert.equal(f.settingsManager.getCompactionSettings(f.model).reserveTokens, 54400);
+    assert.deepEqual(f.settingsManager.getSettings().acm, { triggerPercent: 95, targetPercent: 85 });
+    assert.equal(f.settingsManager.getCompactionSettings(f.model).reserveTokens, 13600);
+    assert.equal(f.settingsManager.getCompactionSettings(f.model).keepRecentTokens, 231200);
     assert.equal(JSON.stringify(branchState(seeded.manager.getBranch()).state), beforeReset);
     assert.equal(captured.length, 1);
     assert.equal(summaries(), 0);
@@ -653,7 +654,7 @@ test('reload failure rolls back the original settings without changing history o
     await f.session.bindExtensions({ commandContextActions: { waitForIdle: async () => {}, reload: async () => { throw new Error('Injected reload failure'); } } });
     await f.configCommand('/acm-config 85 75');
     assert.equal(await readFile(join(f.temp, 'settings.json'), 'utf8'), file);
-    assert.equal(f.settingsManager.getSettings().acm, undefined);
+    assert.deepEqual(f.settingsManager.getSettings().acm, JSON.parse(file).acm);
     assert.equal(JSON.stringify(f.session.sessionManager.getBranch()), raw);
     assert.equal(captured.length, 0);
     assert.equal(summaries(), 0);

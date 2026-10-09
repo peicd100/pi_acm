@@ -1,8 +1,8 @@
 {
   "version": 1,
   "contextCap": 1050000,
-  "triggerRatio": 0.8,
-  "targetRatio": 0.7,
+  "triggerRatio": 0.95,
+  "targetRatio": 0.85,
   "toolTextTokens": 4096,
   "imageTokens": 4096,
   "requestMargin": 2048,

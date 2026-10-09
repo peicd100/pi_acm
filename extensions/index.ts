@@ -6,10 +6,10 @@ import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-a
 import { buildSessionProjection, sessionEntryToContextMessages, getAgentDir } from '@earendil-works/pi-coding-agent';
 import { getCurrentSystemMessage } from '@earendil-works/pi-ai';
 import { MARKER, validatePolicy, createCounter, previewMessage, messageKey,
-  selectWindow, branchState, applyLegacyRows, applyCursor, assertPairing, atomicGroups, omitFailedAttempts } from '../src/window.mjs';
+  selectWindow, branchState, applyLegacyRows, applyCursor, assertPairing, atomicGroups, omitFailedAttempts } from '../src/window_v1.4.1.mjs';
 import { CALIBRATION_TYPE, createCalibration, modelKey } from '../src/calibration.mjs';
 import { CONFIG_USAGE, parseConfigCommand, policyForSettings, nativeBudget, assertNativeSettings,
-  commitConfig, rollbackConfig } from '../src/config.mjs';
+  commitConfig, rollbackConfig } from '../src/config_v1.4.1.mjs';
 
 export default function passiveWindow(pi: ExtensionAPI) {
   // Invalid policy prevents this extension loading; config/resource smoke is required before activation.
@@ -18,7 +18,7 @@ export default function passiveWindow(pi: ExtensionAPI) {
   const refreshPolicy = () => { policy = validatePolicy(policyForSettings(basePolicy, pi.getSettings())); return policy; };
   const counter = createCounter(basePolicy);
   let fault: string | undefined;
-  let last: any = { version: '1.4.0', windowMode: 'automatic', manualCheckpointRequired: false,
+  let last: any = { version: '1.4.1', windowMode: 'automatic', manualCheckpointRequired: false,
     before: 0, after: 0, slides: 0, phase: 'startup' };
   let displayedNative: string | undefined;
   const renderNativeStatus = (ctx: ExtensionContext) => {
@@ -107,11 +107,11 @@ export default function passiveWindow(pi: ExtensionAPI) {
 
   pi.on('session_start', (event, ctx) => {
     fault = undefined;
-    last = { version: '1.4.0', windowMode: 'automatic', manualCheckpointRequired: false,
+    last = { version: '1.4.1', windowMode: 'automatic', manualCheckpointRequired: false,
       before: 0, after: 0, slides: 0, phase: 'startup' };
     try {
       refreshPolicy();
-      const percentages = (pi.getSettings() as any).acm ?? { triggerPercent: 80, targetPercent: 70 };
+      const percentages = (pi.getSettings() as any).acm ?? { triggerPercent: 95, targetPercent: 85 };
       if (event.reason === 'reload') ctx.ui.notify(`ACM 1.4：觸發 ${percentages.triggerPercent}％／保留目標 ${percentages.targetPercent}％ 已載入；窗口邊界未變更。`, 'info');
     } catch (error) { fail(ctx, error); }
     pending = undefined;
@@ -127,7 +127,7 @@ export default function passiveWindow(pi: ExtensionAPI) {
     handler: async (_args, ctx) => {
       try { refreshPolicy(); } catch (error) { fault = error instanceof Error ? error.message : String(error); }
       renderNativeStatus(ctx);
-      ctx.ui.notify(JSON.stringify({ ...last, fault, policy, config: (pi.getSettings() as any).acm ?? { triggerPercent: 80, targetPercent: 70 }, counter: counter.stats(),
+      ctx.ui.notify(JSON.stringify({ ...last, fault, policy, config: (pi.getSettings() as any).acm ?? { triggerPercent: 95, targetPercent: 85 }, counter: counter.stats(),
         calibration: calibrated(ctx).describe(), nativePiView: ctx.getContextUsage(),
         boundary: branchState(ctx.sessionManager.getBranch()).state }, null, 2), 'info');
     },
@@ -141,7 +141,7 @@ export default function passiveWindow(pi: ExtensionAPI) {
         if (!percentages) {
           refreshPolicy();
           const b = ctx.model ? nativeBudget(ctx.model, policy) : null;
-          const current = (pi.getSettings() as any).acm ?? { triggerPercent: 80, targetPercent: 70 };
+          const current = (pi.getSettings() as any).acm ?? { triggerPercent: 95, targetPercent: 85 };
           ctx.ui.notify(`ACM：觸發 ${current.triggerPercent}％／保留目標 ${current.targetPercent}％\n${CONFIG_USAGE}\n` +
             (b ? `目前模型 ${ctx.model!.provider}/${ctx.model!.id}：門檻 ${b.trigger}、目標 ${b.target} tokens。\n` : '') +
             '修改只限閒置 session；儲存後自動 reload，不立刻滑窗、不恢復舊訊息。', 'info');

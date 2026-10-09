@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as window from '../src/window.mjs';
 import { createCalibration, modelKey } from '../src/calibration.mjs';
-const P = { ...window.DEFAULT_POLICY, requestMargin: 20 };
+const P = { ...window.DEFAULT_POLICY, triggerRatio: 0.85, targetRatio: 0.75, requestMargin: 20 };
 const counter = { tokens: m => m.weight ?? 20 };
 const row = (id, weight, role = 'assistant') => ({ id, message: { role, weight, content: [{ type: 'text', text: id }] } });
 
