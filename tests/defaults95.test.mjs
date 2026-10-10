@@ -4,14 +4,17 @@ import { readFileSync } from 'node:fs';
 import { DEFAULT_POLICY, budgets } from '../src/window.mjs';
 import { DEFAULT_PERCENTAGES, parseConfigCommand, policyForSettings, nativeBudget } from '../src/config.mjs';
 const base=JSON.parse(readFileSync(new URL('../policy.json',import.meta.url)));
-test('fresh/default/reset95/85 agree across engine, policy, producer/guard config and native budgets',()=>{
-  assert.deepEqual(DEFAULT_PERCENTAGES,{triggerPercent:95,targetPercent:85});
+test('fresh/default/reset70/55 agree across engine, policy, producer/guard config and native budgets',()=>{
+  assert.deepEqual(DEFAULT_PERCENTAGES,{triggerPercent:70,targetPercent:55});
   assert.deepEqual(parseConfigCommand('reset'),DEFAULT_PERCENTAGES);
-  assert.equal(DEFAULT_POLICY.triggerRatio,0.95);assert.equal(DEFAULT_POLICY.targetRatio,0.85);
+  assert.equal(DEFAULT_POLICY.triggerRatio,0.7);assert.equal(DEFAULT_POLICY.targetRatio,0.55);
   const policy=policyForSettings(base,{});
-  assert.equal(policy.triggerRatio,0.95);assert.equal(policy.targetRatio,0.85);
-  assert.deepEqual(budgets(272000,policy),{capacity:272000,trigger:258400,target:231200,reserve:13600});
-  assert.deepEqual(nativeBudget({contextWindow:272000},policy),{capacity:272000,trigger:258400,target:231200,reserve:13600});
+  assert.equal(policy.triggerRatio,0.7);assert.equal(policy.targetRatio,0.55);
+  assert.deepEqual(budgets(272000,policy),{capacity:272000,trigger:190400,target:149600,reserve:81600});
+  assert.deepEqual(nativeBudget({contextWindow:272000},policy),{capacity:272000,trigger:190400,target:149600,reserve:81600});
+  const legacy=policyForSettings(base,{acm:{triggerPercent:95,targetPercent:85}});
+  assert.deepEqual(nativeBudget({contextWindow:272000},legacy),{capacity:272000,trigger:258400,target:231200,reserve:13600},'Explicit existing95/85 remains an effective custom profile');
+  assert.deepEqual(nativeBudget({contextWindow:1050000},policy),{capacity:1050000,trigger:735000,target:577500,reserve:315000});
   const custom=policyForSettings(base,{acm:{triggerPercent:80,targetPercent:60}});
   assert.equal(custom.triggerRatio,0.8);assert.equal(custom.targetRatio,0.6,'An upgrade must not overwrite explicit user percentages');
 });

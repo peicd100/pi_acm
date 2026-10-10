@@ -1,6 +1,6 @@
 {
   "name": "pi-acm-passive",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "private": true,
   "description": "Deterministic no-summary automatic context sliding for Pi",
   "type": "module",

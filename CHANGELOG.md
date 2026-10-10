@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.4.4 — Default70/55
+
+- Fresh install, reset, policy, selector, producer/guard and automatic current-model initialization now agree on70% trigger /55% target;272k budgets190400/149600/reserve81600.
+- Add immutable config/selector1.4.4 modules for same-process reload; retain old modules and explicit saved profiles, including95/85. Adopt the new default with `/acm-config reset` while idle/queue clear.
+- Keep route-aware counting/calibration, boundaries, raw history/signatures/tool pairing and no-summary guard unchanged. Lower defaults are not a guarantee of quota savings or unchanged task quality.
+
 ## 1.4.3 — Target-route counting
 
 - Add counting-only Responses projection for audited Pi1.1.0: foreign encrypted/redacted thinking is not charged as replay, visible foreign summaries remain; compatible signed replay keeps original-output reserve.

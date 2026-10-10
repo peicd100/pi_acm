@@ -2,7 +2,7 @@
 
 **不摘要、自動滑動的 Pi context window 管理插件。** 原始 transcript 保留在 Pi session；ACM 只調整下一次送給模型的 context，不會呼叫額外模型產生摘要。
 
-版本：`1.4.3`。套件名稱 `pi-acm-passive`；GitHub repo 名稱 `pi_acm`。這不是 npm 的 `pi-acm` 套件。
+版本：`1.4.4`。套件名稱 `pi-acm-passive`；GitHub repo 名稱 `pi_acm`。這不是 npm 的 `pi-acm` 套件。
 
 ## 安裝
 
@@ -15,7 +15,7 @@ pi install git:github.com/peicd100/pi_acm
 建議固定版本安裝：
 
 ```sh
-pi install git:github.com/peicd100/pi_acm@v1.4.3
+pi install git:github.com/peicd100/pi_acm@v1.4.4
 ```
 
 兩者擇一；不要和原來的本機 passive ACM、npm `pi-acm` 或其他 compaction/context 管理插件同時載入。先用 `pi list`、`pi config` 檢查並停用重複插件。Extension 會以 Pi 的 OS 權限執行，安裝前應審閱來源。
@@ -26,7 +26,7 @@ pi install git:github.com/peicd100/pi_acm@v1.4.3
 /acm-status
 ```
 
-1.4.3 在 interactive TUI 的閒置 startup／切模型／回合 settle 邊界自動檢查：新安裝以95/85初始化；已有ACM比例則沿用；已符合就不寫檔。一般使用者不必先輸入初始化指令。明確自訂budget／已關閉compaction時會先確認；拒絕則保留原設定並取消未批准的請求，不使用AI摘要。忙碌或佇列未清空不寫入，等下一個閒置邊界；也可自行執行 `/acm-setup`。
+1.4.4 在 interactive TUI 的閒置 startup／切模型／回合 settle 邊界自動檢查：新安裝以70/55初始化；已有ACM比例則沿用；已符合就不寫檔。一般使用者不必先輸入初始化指令。明確自訂budget／已關閉compaction時會先確認；拒絕則保留原設定並取消未批准的請求，不使用AI摘要。忙碌或佇列未清空不寫入，等下一個閒置邊界；也可自行執行 `/acm-setup`。
 
 自動化不會從print／JSON／SDK／RPC模式寫入personal settings。這些模式需要事先配置，或由有明確agentDir與真正reload action的SDK呼叫 `/acm-setup`。不會把自動setup當模型prompt，沒有初始化模型費用。
 
@@ -46,16 +46,16 @@ pi install .
 | `/acm-status` | 顯示 native usage、policy、校準 budget 與保存的 boundary |
 | `/acm-setup` | 閒置同步目前模型，沿用比例，衝突才確認；不呼叫模型 |
 | `/acm-config` | 唯讀顯示目前百分比與說明 |
-| `/acm-config 95 85` | 保存 trigger 95%、target 85%，並 reload idle session |
-| `/acm-config reset` | 還原預設 95%／85%，同步當前模型 budget |
+| `/acm-config 70 55` | 保存 trigger 70%、target 55%，並 reload idle session |
+| `/acm-config reset` | 還原預設 70%／55%，同步當前模型 budget |
 
-接受小數與 `%`，例如 `/acm-config 85.5% 75%`。要求 `0 < target < trigger < 100`；建議間距 5–10 個百分點，小於 5 只會警告，不會任意禁止。
+接受小數與 `%`，例如 `/acm-config 85.5% 75%`。要求 `0 < target < trigger < 100`；建議間距 10–20 個百分點，小於 5 只會警告，不會任意禁止。
 
 `/acm-anchor`、`/acm-restore`、`/acm-checkpoint` 已移除；舊 session 的 branch state 與 historical anchor 仍按原有邏輯重建，不會因移除指令而復活已排除訊息。
 
 ## 滑動行為與限制
 
-1.4.3 的新安裝與 reset 預設是 95/85；升版不覆蓋既有自訂比例。高保留量不保證降低延遲，也不修復 provider 串流中斷。Window/config 使用新 versioned module path，避免同 process reload 沿用舊 ESM defaults。
+1.4.4 的新安裝與 reset 預設是 70/55；升版不覆蓋既有明確比例（包括以前已保存的95/85）。要採用新預設，請在idle且queue清空後 `/acm-config reset`。272k下trigger190,400／target149,600／native reserve81,600；1.05m下735,000／577,500／315,000。較低預設不保證品質、速度或Codex額度等比例節省；cache miss、額外讀檔與返工也會影響成本。高保留量不保證降低延遲，也不修復 provider 串流中斷。Window/config 使用新 versioned module path，避免同 process reload 沿用舊 ESM defaults。
 
 - **Trigger**：校準後的下一次 input 超過有效容量的指定比例，才啟動滑動。
 - **Target**：選擇近期 chronological suffix 時的目標比例；必要內容和完整 tool batch 優先，因此不是精確保留比例。
@@ -86,13 +86,13 @@ Producer 與 independent no-summary guard 的順序固定為 `extensions/index.t
 ```json
 {
   "acm": {
-    "triggerPercent": 95,
-    "targetPercent": 85
+    "triggerPercent": 70,
+    "targetPercent": 55
   }
 }
 ```
 
-自動初始化／`/acm-setup` 只寫目前模型的 `compaction.modelOverrides[provider/modelId]`、必要的 `enabled=true` 與ACM比例／`acm.autoInit` ownership記錄；不改ordinary全域tokenbudget或其他模型overrides。預設95/85；有自訂比例則沿用。已由ACM管理且值未被別人改動的budget可自動同步；明確自訂值或enabled=false要確認。Ownership是避免意外覆寫的記錄，不是安全隔離；可信extensions／使用者仍能改動它。
+自動初始化／`/acm-setup` 只寫目前模型的 `compaction.modelOverrides[provider/modelId]`、必要的 `enabled=true` 與ACM比例／`acm.autoInit` ownership記錄；不改ordinary全域tokenbudget或其他模型overrides。預設70/55；有自訂比例則沿用。已由ACM管理且值未被別人改動的budget可自動同步；明確自訂值或enabled=false要確認。Ownership是避免意外覆寫的記錄，不是安全隔離；可信extensions／使用者仍能改動它。
 
 受信任專案若覆蓋比例／budget且無法從user settings安全同步，只提示調整專案設定，不寫project、不改全域使用者比例。未受信任專案設定不讀。同步透過registered command與command-only reload完成，不在context transform中寫檔或reload；同步失敗仍不放行請求。
 
@@ -117,7 +117,7 @@ pi update git:github.com/peicd100/pi_acm
 ```sh
 pi remove git:github.com/peicd100/pi_acm
 # 若安裝的是固定版本：
-pi remove git:github.com/peicd100/pi_acm@v1.4.3
+pi remove git:github.com/peicd100/pi_acm@v1.4.4
 ```
 
 移除後 idle `/reload` 或重啟。**移除 package 不會還原 `/acm-config` 修改的 user settings。** 改回 native compaction 前，請在 `pi config`／settings 中檢查 `acm`、`compaction.reserveTokens`、`keepRecentTokens` 與相關 model override；只調整確定屬於 ACM 的項目，不要用舊備份整份覆蓋後來的其他設定。`/acm-config reset` 是重設 ACM 比例，不是卸載還原。

@@ -15,7 +15,7 @@ const temp = mkdtempSync(join(tmpdir(), 'pi acm 安裝 '));
 const fixture = join(temp, 'source'), agent = join(temp, 'agent'), cwd = join(temp, 'work');
 for (const path of [fixture, agent, cwd]) mkdirSync(path);
 const repoURL = remote ? 'https://github.com/peicd100/pi_acm.git' : 'https://example.invalid/pi/acm.git';
-const source = remote ? 'git:github.com/peicd100/pi_acm@v1.4.3' : 'git:' + repoURL + '@v1.4.3';
+const source = remote ? 'git:github.com/peicd100/pi_acm@v1.4.4' : 'git:' + repoURL + '@v1.4.4';
 const installParts = remote ? ['github.com', 'peicd100', 'pi_acm'] : ['example.invalid', 'pi', 'acm'];
 const env = { ...process.env, PI_CODING_AGENT_DIR: agent, PI_OFFLINE: '1', PI_TELEMETRY: '0', PI_SKIP_VERSION_CHECK: '1',
   GIT_CONFIG_COUNT: remote ? '0' : '1', GIT_CONFIG_KEY_0: `url.${pathToFileURL(fixture).href.replace(/\/$/, '')}.insteadOf`, GIT_CONFIG_VALUE_0: repoURL,
@@ -44,7 +44,7 @@ try {
     run('git', ['init', '--quiet'], fixture);
     run('git', ['add', '.'], fixture);
     run('git', ['-c', 'user.name=ACM install fixture', '-c', 'user.email=fixture@example.invalid', '-c', 'commit.gpgsign=false', 'commit', '--quiet', '-m', 'Disposable install fixture'], fixture);
-    run('git', ['tag', 'v1.4.3'], fixture);
+    run('git', ['tag', 'v1.4.4'], fixture);
   }
   pi(['install', source]);
   const settings = JSON.parse(readFileSync(join(agent, 'settings.json')));
@@ -52,7 +52,7 @@ try {
   assert(pi(['list']).includes(installParts[0]));
   const installed = join(agent, 'git', ...installParts);
   const installedHead = run('git', ['rev-parse', 'HEAD'], installed).trim();
-  assert.equal(run('git', ['describe', '--tags', '--exact-match'], installed).trim(), 'v1.4.3');
+  assert.equal(run('git', ['describe', '--tags', '--exact-match'], installed).trim(), 'v1.4.4');
   assert(existsSync(join(installed, 'node_modules/gpt-tokenizer')), 'runtime dependency not installed');
   assert(!existsSync(join(installed, 'node_modules/@earendil-works/pi-coding-agent')), 'host must not be bundled');
   const pkg = JSON.parse(readFileSync(join(installed, 'package.json')));

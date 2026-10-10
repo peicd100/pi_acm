@@ -36,10 +36,10 @@ test('dependency-free guard blocks request when producer is absent and when veri
   assert.throws(() => callback({ messages }, ctx), /aborted/);
   bus.emit('acm-passive:request-ready', { messages, estimatedTokens: NaN });
   assert.throws(() => callback({ messages }, ctx), /aborted/);
-  bus.emit('acm-passive:request-ready', { messages, estimatedTokens: 258401 });
+  bus.emit('acm-passive:request-ready', { messages, estimatedTokens: 190401 });
   assert.throws(() => callback({ messages }, ctx), /aborted/);
   assert.equal(aborts, 3);
-  bus.emit('acm-passive:request-ready', { messages, estimatedTokens: 231200 });
+  bus.emit('acm-passive:request-ready', { messages, estimatedTokens: 149600 });
   assert.equal(callback({ messages }, ctx), undefined);
   assert.throws(() => callback({ messages }, ctx), /aborted/, 'approval cannot be replayed');
   const event = { reason: 'overflow' };

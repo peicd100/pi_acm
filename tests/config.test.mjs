@@ -40,7 +40,7 @@ test('config parses display/reset, decimals and optional percent signs, rejects 
   for (const acm of [null, [], {}, { triggerPercent: 80 }, { triggerPercent: 70, targetPercent: 80 }]) {
     assert.throws(() => policyForSettings(base, { acm }), /比例/);
   }
-  assert.equal(policyForSettings(base, {}).triggerRatio, 0.95);
+  assert.equal(policyForSettings(base, {}).triggerRatio, 0.7);
   assert.equal(policyForSettings(base, { acm: percentages }).targetRatio, 0.75);
   assert.throws(() => policyForSettings({ ...base, noSummary: false }, {}), /no summary fallback/);
 });
@@ -146,7 +146,7 @@ test('guard loads without a tokenizer or base policy and still cancels every sum
     mkdirSync(join(cwd, 'src'));
     const path = join(cwd, 'extensions', 'no-summary-guard.ts');
     cpSync(guard, path);
-    cpSync(fileURLToPath(new URL('../src/config_v1.4.2.mjs', import.meta.url)), join(cwd, 'src', 'config_v1.4.2.mjs'));
+    cpSync(fileURLToPath(new URL('../src/config_v1.4.4.mjs', import.meta.url)), join(cwd, 'src', 'config_v1.4.4.mjs'));
     const bus = createEventBus();
     const loaded = await loadExtensions([path], cwd, bus);
     assert.deepEqual(loaded.errors, []);

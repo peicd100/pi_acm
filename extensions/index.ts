@@ -6,10 +6,10 @@ import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-a
 import { buildSessionProjection, sessionEntryToContextMessages, getAgentDir, VERSION as PI_VERSION } from '@earendil-works/pi-coding-agent';
 import { getCurrentSystemMessage } from '@earendil-works/pi-ai';
 import { MARKER, validatePolicy, createCounter, previewMessage, messageKey,
-  selectWindow, branchState, applyLegacyRows, applyCursor, assertPairing, atomicGroups, omitFailedAttempts } from '../src/window_v1.4.1.mjs';
+  selectWindow, branchState, applyLegacyRows, applyCursor, assertPairing, atomicGroups, omitFailedAttempts } from '../src/window_v1.4.4.mjs';
 import { CALIBRATION_TYPE, createCalibration, modelKey } from '../src/calibration_v1.4.3.mjs';
-import { CONFIG_USAGE, parseConfigCommand, policyForSettings, nativeBudget, assertNativeSettings,
-  commitConfig, rollbackConfig, inspectSetup, commitSetup } from '../src/config_v1.4.2.mjs';
+import { DEFAULT_PERCENTAGES, CONFIG_USAGE, parseConfigCommand, policyForSettings, nativeBudget, assertNativeSettings,
+  commitConfig, rollbackConfig, inspectSetup, commitSetup } from '../src/config_v1.4.4.mjs';
 
 export default function passiveWindow(pi: ExtensionAPI) {
   // Invalid policy prevents this extension loading; config/resource smoke is required before activation.
@@ -18,7 +18,7 @@ export default function passiveWindow(pi: ExtensionAPI) {
   const refreshPolicy = () => { policy = validatePolicy(policyForSettings(basePolicy, pi.getSettings())); return policy; };
   const counter = createCounter(basePolicy);
   let fault: string | undefined;
-  let last: any = { version: '1.4.3', windowMode: 'automatic', manualCheckpointRequired: false,
+  let last: any = { version: '1.4.4', windowMode: 'automatic', manualCheckpointRequired: false,
     before: 0, after: 0, slides: 0, phase: 'startup' };
   let displayedNative: string | undefined;
   let setupQueued=false, setupBusy=false, setupStopped=false;
@@ -134,11 +134,11 @@ export default function passiveWindow(pi: ExtensionAPI) {
 
   pi.on('session_start', (event, ctx) => {
     fault = undefined;
-    last = { version: '1.4.3', windowMode: 'automatic', manualCheckpointRequired: false,
+    last = { version: '1.4.4', windowMode: 'automatic', manualCheckpointRequired: false,
       before: 0, after: 0, slides: 0, phase: 'startup' };
     try {
       refreshPolicy();
-      const percentages = (pi.getSettings() as any).acm ?? { triggerPercent: 95, targetPercent: 85 };
+      const percentages = (pi.getSettings() as any).acm ?? DEFAULT_PERCENTAGES;
       // Initialization/config commands provide their own one-line notice.
     } catch (error) { fail(ctx, error); }
     pending = undefined;
@@ -155,13 +155,13 @@ export default function passiveWindow(pi: ExtensionAPI) {
     handler: async (_args, ctx) => {
       try { refreshPolicy(); } catch (error) { fault = error instanceof Error ? error.message : String(error); }
       renderNativeStatus(ctx);
-      ctx.ui.notify(JSON.stringify({ ...last, fault, policy, config: (pi.getSettings() as any).acm ?? { triggerPercent: 95, targetPercent: 85 }, counter: counter.stats(),
+      ctx.ui.notify(JSON.stringify({ ...last, fault, policy, config: (pi.getSettings() as any).acm ?? DEFAULT_PERCENTAGES, counter: counter.stats(),
         calibration: calibrated(ctx).describe(), nativePiView: ctx.getContextUsage(),
         boundary: branchState(ctx.sessionManager.getBranch()).state }, null, 2), 'info');
     },
   });
   pi.registerCommand('acm-config', {
-    description: '查看或永久設定觸發／保留比例：/acm-config [95 85|reset]（不呼叫模型）',
+    description: '查看或永久設定觸發／保留比例：/acm-config [70 55|reset]（不呼叫模型）',
     handler: async (args, ctx) => {
       let receipt: any;
       try {
@@ -169,7 +169,7 @@ export default function passiveWindow(pi: ExtensionAPI) {
         if (!percentages) {
           refreshPolicy();
           const b = ctx.model ? nativeBudget(ctx.model, policy) : null;
-          const current = (pi.getSettings() as any).acm ?? { triggerPercent: 95, targetPercent: 85 };
+          const current = (pi.getSettings() as any).acm ?? DEFAULT_PERCENTAGES;
           ctx.ui.notify(`ACM：觸發 ${current.triggerPercent}％／保留目標 ${current.targetPercent}％\n${CONFIG_USAGE}\n` +
             (b ? `目前模型 ${ctx.model!.provider}/${ctx.model!.id}：門檻 ${b.trigger}、目標 ${b.target} tokens。\n` : '') +
             '修改只限閒置 session；儲存後自動 reload，不立刻滑窗、不恢復舊訊息。', 'info');

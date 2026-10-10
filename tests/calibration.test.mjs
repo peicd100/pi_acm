@@ -26,7 +26,7 @@ test('same-request high-water ratio and safety margin affect actual window budge
   const budget = cal.view(key, base, P);
   assert.ok(Math.abs(budget.factor - 1.47) < 1e-10);
   const rows = Array.from({ length: 20 }, (_, i) => ({ id: String(i), message: { role: 'assistant', cost: 10000 } }));
-  assert.equal(selectWindow(rows, base, 272000).changed, false);
+  assert.equal(selectWindow(rows, base, 272000, P).changed, false, 'Compare calibration against the same explicit85/75 fixture, not mutable package defaults');
   const plan = selectWindow(rows, budget, 272000, P, [], budget.offset);
   assert.equal(plan.changed, true);
   assert.ok(plan.after <= 204000);

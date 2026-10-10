@@ -33,14 +33,14 @@ async function fixture(settings,run,{mode='tui',confirm=()=>true,reloadFailure=f
  }finally{session?.dispose();if(old===undefined)delete process.env.PI_CODING_AGENT_DIR;else process.env.PI_CODING_AGENT_DIR=old;await rm(root,{recursive:true,force:true});}
 }
 test('fresh TUI startup automatically dispatches setup/reloads, first greeting succeeds, no model call during init',()=>fixture({},async f=>{
- await wait(()=>f.settingsManager.getSettings().acm?.triggerPercent===95&&f.reloads===1);await new Promise(r=>setTimeout(r,30));
+ await wait(()=>f.settingsManager.getSettings().acm?.triggerPercent===70&&f.reloads===1);await new Promise(r=>setTimeout(r,30));
  assert.equal(f.requests,0);assert.equal(f.dialogs,0);assert.equal(f.session.sessionManager.getBranch().filter(e=>e.type==='message').length,0,'Auto command must not become a model prompt/transcript message');
  assert.equal(f.notices.filter(n=>n.includes('已初始化')).length,1);
- const cfg=f.settingsManager.getCompactionSettings(f.model);assert.equal(cfg.reserveTokens,13600);assert.equal(cfg.keepRecentTokens,231200);
+ const cfg=f.settingsManager.getCompactionSettings(f.model);assert.equal(cfg.reserveTokens,81600);assert.equal(cfg.keepRecentTokens,149600);
  await f.session.prompt('早安');assert.equal(f.requests,1);assert.deepEqual(f.errors,[]);
 }));
 test('reported openai/luna272k fresh profile can greet after automatic setup without manual config',()=>fixture({},async f=>{
- await wait(()=>f.reloads===1&&f.settingsManager.getSettings().compaction?.modelOverrides?.['openai/gpt-6-luna']);assert.deepEqual(f.settingsManager.getSettings().compaction.modelOverrides['openai/gpt-6-luna'],{reserveTokens:13600,keepRecentTokens:231200});assert.equal(f.requests,0);await f.session.prompt('早安');assert.equal(f.requests,1);assert.deepEqual(f.errors,[]);
+ await wait(()=>f.reloads===1&&f.settingsManager.getSettings().compaction?.modelOverrides?.['openai/gpt-6-luna']);assert.deepEqual(f.settingsManager.getSettings().compaction.modelOverrides['openai/gpt-6-luna'],{reserveTokens:81600,keepRecentTokens:149600});assert.equal(f.requests,0);await f.session.prompt('早安');assert.equal(f.requests,1);assert.deepEqual(f.errors,[]);
 },{modelOverride:{provider:'openai',id:'gpt-6-luna',api:'openai-responses'}}));
 
 test('custom ratios survive automatic setup; selecting a new model initializes it and preserves prior budget',()=>fixture({acm:{triggerPercent:80,targetPercent:60},theme:'fixture'},async f=>{
@@ -58,7 +58,7 @@ test('conflict decline keeps bytes and emits no request; explicit setup can late
  },{confirm:()=>accept});
 });
 test('busy model selection defers disk mutation until the stream settles',()=>fixture({},async f=>{
- await wait(()=>f.reloads===1&&f.settingsManager.getSettings().acm?.triggerPercent===95);
+ await wait(()=>f.reloads===1&&f.settingsManager.getSettings().acm?.triggerPercent===70);
  let release;f.session.agent.streamFunction=(m)=>{const stream=ai.createAssistantMessageEventStream();release=()=>{const message={role:'assistant',api:m.api,provider:m.provider,model:m.id,timestamp:Date.now(),content:[{type:'text',text:'held fixture'}],stopReason:'stop',usage:{input:1000,output:8,cacheRead:0,cacheWrite:0,totalTokens:1008,cost:{input:0,output:0,cacheRead:0,cacheWrite:0,total:0}}};stream.push({type:'done',reason:'stop',message});stream.end();};return stream;};
  const running=f.session.prompt('Held fixture stream');await wait(()=>typeof release==='function'&&f.session.isStreaming);
  const before=await readFile(join(f.root,'settings.json'),'utf8');
@@ -66,7 +66,7 @@ test('busy model selection defers disk mutation until the stream settles',()=>fi
  release();await running;await wait(()=>f.reloads===2&&f.settingsManager.getSettings().compaction?.modelOverrides?.['openai-codex/busy-next-model']);assert.deepEqual(f.errors,[]);
 }));
 test('pending user queue prevents setup mutation until cleared and a fresh model boundary',()=>fixture({},async f=>{
- await wait(()=>f.reloads===1&&f.settingsManager.getSettings().acm?.triggerPercent===95);
+ await wait(()=>f.reloads===1&&f.settingsManager.getSettings().acm?.triggerPercent===70);
  await f.session.steer('Queued fixture; never send');const before=await readFile(join(f.root,'settings.json'),'utf8');const next={...f.model,id:'queue-next-model',contextWindow:512000};await f.session.setModel(next);await new Promise(r=>setTimeout(r,40));assert.equal(await readFile(join(f.root,'settings.json'),'utf8'),before);assert.equal(f.reloads,1);assert.equal(f.requests,0);
  f.session.clearQueue();await f.session.setModel({...next,id:'queue-cleared-model'});await wait(()=>f.reloads===2&&f.settingsManager.getSettings().compaction?.modelOverrides?.['openai-codex/queue-cleared-model']);assert.equal(f.requests,0);
 }));

@@ -628,7 +628,7 @@ test('config persists ratios, synchronizes native settings and both extensions t
     assert.equal(captured.length, 0);
     await f.configCommand('/acm-status');
     const status = JSON.parse(notices.at(-1));
-    assert.equal(status.version, '1.4.3');
+    assert.equal(status.version, '1.4.4');
     assert.equal(status.policy.triggerRatio, 0.85);
     assert.equal(status.policy.targetRatio, 0.75);
     assert.equal(f.extensions.extensions.length, 2);
@@ -637,9 +637,9 @@ test('config persists ratios, synchronizes native settings and both extensions t
     assertPairing(captured[0].messages);
     const beforeReset = JSON.stringify(branchState(seeded.manager.getBranch()).state);
     await f.configCommand('/acm-config reset');
-    assert.deepEqual(f.settingsManager.getSettings().acm, { triggerPercent: 95, targetPercent: 85 });
-    assert.equal(f.settingsManager.getCompactionSettings(f.model).reserveTokens, 13600);
-    assert.equal(f.settingsManager.getCompactionSettings(f.model).keepRecentTokens, 231200);
+    assert.deepEqual(f.settingsManager.getSettings().acm, { triggerPercent: 70, targetPercent: 55 });
+    assert.equal(f.settingsManager.getCompactionSettings(f.model).reserveTokens, 81600);
+    assert.equal(f.settingsManager.getCompactionSettings(f.model).keepRecentTokens, 149600);
     assert.equal(JSON.stringify(branchState(seeded.manager.getBranch()).state), beforeReset);
     assert.equal(captured.length, 1);
     assert.equal(summaries(), 0);

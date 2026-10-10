@@ -3,17 +3,20 @@ import assert from 'node:assert/strict';
 import {mkdtempSync,writeFileSync,readFileSync,mkdirSync,rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {inspectSetup,commitSetup,rollbackConfig} from '../src/config_v1.4.2.mjs';
+import {inspectSetup,commitSetup,rollbackConfig} from '../src/config_v1.4.4.mjs';
 const base=JSON.parse(readFileSync(new URL('../policy.json',import.meta.url)));
 const model={provider:'fixture',id:'luna',contextWindow:272000};
 function fixture(global,run){const root=mkdtempSync(join(tmpdir(),'acm auto init ')),path=join(root,'settings.json');writeFileSync(path,JSON.stringify(global));const options=()=>({path,cwd:root,projectTrusted:false,runtimeSettings:JSON.parse(readFileSync(path)),model,base});try{run({root,path,options});}finally{rmSync(root,{recursive:true,force:true});}}
-test('fresh settings automatically initializes95/85 once, current model only, preserves unrelated settings',()=>fixture({theme:'fixture',compaction:{modelOverrides:{'other/model':{reserveTokens:1,keepRecentTokens:2}}}},({path,options})=>{
+test('fresh settings automatically initializes70/55 once, current model only, preserves unrelated settings',()=>fixture({theme:'fixture',compaction:{modelOverrides:{'other/model':{reserveTokens:1,keepRecentTokens:2}}}},({path,options})=>{
  const p=inspectSetup(options());assert.equal(p.kind,'automatic');assert.match(p.fingerprint,/^[a-f0-9]{64}$/);
  commitSetup(options(),{fingerprint:p.fingerprint});const saved=JSON.parse(readFileSync(path));
- assert.equal(saved.theme,'fixture');assert.equal(saved.acm.triggerPercent,95);assert.equal(saved.acm.targetPercent,85);
- assert.deepEqual(saved.compaction.modelOverrides['fixture/luna'],{reserveTokens:13600,keepRecentTokens:231200});
+ assert.equal(saved.theme,'fixture');assert.equal(saved.acm.triggerPercent,70);assert.equal(saved.acm.targetPercent,55);
+ assert.deepEqual(saved.compaction.modelOverrides['fixture/luna'],{reserveTokens:81600,keepRecentTokens:149600});
  assert.deepEqual(saved.compaction.modelOverrides['other/model'],{reserveTokens:1,keepRecentTokens:2});assert.equal(saved.compaction.reserveTokens,undefined);
  const bytes=readFileSync(path,'utf8'),ready=inspectSetup(options());assert.equal(ready.kind,'ready');assert.equal(commitSetup(options(),{fingerprint:ready.fingerprint}),null);assert.equal(readFileSync(path,'utf8'),bytes);
+}));
+test('upgrade treats existing explicit95/85 as a custom profile and leaves already-matching owned settings byte-identical',()=>fixture({acm:{triggerPercent:95,targetPercent:85,autoInit:{version:1,models:{'fixture/luna':{reserveTokens:13600,keepRecentTokens:231200}}}},compaction:{enabled:true,modelOverrides:{'fixture/luna':{reserveTokens:13600,keepRecentTokens:231200}}}},({path,options})=>{
+ const before=readFileSync(path,'utf8'),p=inspectSetup(options());assert.equal(p.kind,'ready');assert.deepEqual(p.percentages,{triggerPercent:95,targetPercent:85});assert.equal(commitSetup(options(),{fingerprint:p.fingerprint}),null);assert.equal(readFileSync(path,'utf8'),before);
 }));
 test('custom ACM percentages retained; a new model initializes without disturbing previous model/global defaults',()=>fixture({acm:{triggerPercent:80,targetPercent:60,extra:'preserve'},compaction:{enabled:true,reserveTokens:16384,keepRecentTokens:20000}},({path,options})=>{
  let p=inspectSetup(options());assert.equal(p.kind,'automatic');commitSetup(options(),{fingerprint:p.fingerprint});

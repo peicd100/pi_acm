@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
-import { policyForSettings, nativeBudget } from '../src/config_v1.4.2.mjs';
+import { policyForSettings, nativeBudget } from '../src/config_v1.4.4.mjs';
 
 // No tokenizer or external runtime dependency. Even an invalid/missing policy or
 // producer must leave native/manual/overflow/tree AI summarization cancelled.

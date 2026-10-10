@@ -1,3 +1,14 @@
+# Verification — 1.4.4 default70/55
+
+- Targeted47/47 PASS; final full91/91 PASS, package/disposable local Git install/tag/list/load/remove PASS. No real providers/POST.
+- Fresh TUI automatic current-model setup, greeting, reset, explicit old95/85 preservation, one-shot independent guard, multi-capacity native rounding and same-process cached95/85→70/55 reload verified.
+- 272k190400/149600/reserve81600;1.05m735000/577500/reserve315000. User/project conflicts, busy/pending, rollback/ownership still protected.
+- Route-aware counting, calibration-rule isolation, cursor/raw-signature/tool-pairing/no-prefix-revival tests remain PASS. Old configuration/selector/calibration modules are byte-preserved.
+- Initial full attempt90/91: calibration comparison accidentally relied on mutable package defaults; fixed the fixture to use its same explicit85/75 profile. Production behavior was not loosened.
+- Public refs/Git smoke/3OSCI are independent release gates recorded against exact published commit. No Docker live update/reload, no personal settings edits; lower defaults do not guarantee quota savings or equal quality.
+
+## Historical evidence (not current execution authority)
+
 # Verification — 1.4.3 target-route counting
 
 - Full mocked90/90 PASS. Initial targeted projection/calibration/SDK integration34/34 PASS; final full includes added unaudited-host rule isolation.

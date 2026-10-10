@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, existsSync, lstatSync, readdirSync } from 'node:fs';
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url)));
 assert.equal(pkg.name, 'pi-acm-passive');
-assert.equal(pkg.version, '1.4.3');
+assert.equal(pkg.version, '1.4.4');
 assert.deepEqual(pkg.pi.extensions, ['./extensions/index.ts', './extensions/no-summary-guard.ts']);
 assert.deepEqual(pkg.pi.skills, []);
 assert(pkg.keywords.includes('pi-package'));
@@ -13,7 +13,7 @@ for (const name of ['@earendil-works/pi-coding-agent', '@earendil-works/pi-ai'])
 for (const path of [...pkg.pi.extensions, 'policy.json', 'README.md', 'LICENSE', 'NOTICE.md']) assert(existsSync(new URL('../' + path.replace(/^\.\//, ''), import.meta.url)), 'Missing ' + path);
 const policy = JSON.parse(readFileSync(new URL('../policy.json', import.meta.url)));
 assert.equal(policy.noSummary, true);
-assert.equal(policy.triggerRatio, 0.95); assert.equal(policy.targetRatio, 0.85);
+assert.equal(policy.triggerRatio, 0.7); assert.equal(policy.targetRatio, 0.55);
 for (const dir of ['extensions', 'src', 'tests']) {
   for (const item of readdirSync(new URL('../' + dir + '/', import.meta.url), { withFileTypes: true })) {
     const path = new URL('../' + dir + '/' + item.name, import.meta.url);
