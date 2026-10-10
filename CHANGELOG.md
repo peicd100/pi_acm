@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.3 — Target-route counting
+
+- Add counting-only Responses projection for audited Pi1.1.0: foreign encrypted/redacted thinking is not charged as replay, visible foreign summaries remain; compatible signed replay keeps original-output reserve.
+- New immutable calibration/projection modules with version2 countingRule records; valid legacy version1 records retain response binding but cannot train the new basis. Route/rule samples remain separate; unaudited host/custom API fallback stays conservative.
+- Do not mutate raw history/request/tool IDs/signatures, reset cursor/anchors, resurrect cropped prefixes or share provider cache. Native footer stays unchanged.
+- Add SDK serializer differential, same/foreign/unknown/unsigned/redacted fixtures and A→B→A/reload/cursor/tool-pairing regression tests. No Docker live update/reload or real provider traffic for validation.
+
 ## 1.4.2 — Idle automatic initialization
 
 - Automatically initialize fresh interactive TUI profiles (95/85), preserve custom ratios and synchronize newly selected models only at idle/empty-queue boundaries.

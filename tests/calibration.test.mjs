@@ -1,12 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createCalibration, opaqueBasis, modelKey, promptTokens, nativeUsageTokens, CALIBRATION_TYPE } from '../src/calibration.mjs';
+import { createCalibration, opaqueBasis, modelKey, promptTokens, nativeUsageTokens, CALIBRATION_TYPE, COUNTING_RULE } from '../src/calibration_v1.4.3.mjs';
 import { selectWindow, DEFAULT_POLICY as DEFAULT_P } from '../src/window.mjs';
 const P = { ...DEFAULT_P, triggerRatio: 0.85, targetRatio: 0.75 };
 const model = { provider: 'fixture', api: 'fixture-api', id: 'model-a' };
 const key = modelKey(model);
 const base = { tokens: m => m.cost ?? 100 };
-const snapshot = (basis = 100000) => ({ requestId: 'request-a', modelKey: key,
+const snapshot = (basis = 100000) => ({ requestId: 'request-a', modelKey: key, countingRule:COUNTING_RULE,
   inputFingerprint: 'a'.repeat(64), visibleInputTokens: basis, basisTokens: basis });
 const response = (input = 140000, overrides = {}) => ({ role: 'assistant', provider: model.provider,
   api: model.api, model: model.id, stopReason: 'stop', usage: { input: input - Math.min(10000, input),

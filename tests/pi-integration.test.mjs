@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createCounter, assertPairing, MARKER, branchState } from '../src/window.mjs';
+import { opaqueBasis, COUNTING_RULE } from '../src/calibration_v1.4.3.mjs';
 
 import { ai, fromHost } from './runtime.mjs';
 const core = await fromHost('dist/index.js');
@@ -211,6 +212,32 @@ test('same-request Main usage trains calibration; native footer view and branch 
     } finally { await resumed.teardown(); }
     assert.equal(summaries(), 0);
   } finally { await f.teardown(); }
+});
+
+test('A→B→A route switch uses target counting without premature foreign cut, cursor reset, raw mutation or broken tool pairing',async()=>{
+ const modelA={api:'openai-responses',provider:'openai',id:'gpt-6.1-sol'},manager=core.SessionManager.inMemory('/fixture');
+ manager.appendMessage({role:'user',content:'Already cropped prefix: do not revive',timestamp:1});
+ manager.appendMessage(assistant(modelA,[{type:'text',text:'Already cropped assistant prefix'}]));
+ const boundary=manager.appendMessage({role:'user',content:'Retained task anchor',timestamp:2});
+ const signature=JSON.stringify({type:'reasoning',id:'rs_fixture',encrypted_content:'synthetic-fixture-not-real',summary:[]});
+ const opaqueID=manager.appendMessage(assistant(modelA,[{type:'thinking',thinking:'Keep the visible route-A summary',thinkingSignature:signature}],{...zeroUsage,output:153201,totalTokens:153201}));
+ const useful=manager.appendMessage(assistant(modelA,[{type:'text',text:'Useful retained task details and progress. '.repeat(9500)},{type:'toolCall',id:'call_fixture|fc_fixture',name:'read',arguments:{path:'fixture'}}]));
+ manager.appendMessage({role:'toolResult',toolCallId:'call_fixture|fc_fixture',toolName:'read',content:[{type:'text',text:'Retained mechanical result'}],timestamp:3});
+ manager.appendCustomEntry('acm-passive',{cursorId:boundary,carriedIds:[],anchorIds:[],taskAnchorId:boundary,windowMode:'automatic'});
+ const rawBefore=JSON.stringify(manager.getEntry(opaqueID));
+ const f=await fixture({sessionManager:manager}),requests=[],counter=createCounter();f.modelRuntime.checkAuth=async()=>true;
+ const summaries=mockStream(f,(target,context)=>{const input=context.messages.reduce((n,m)=>n+opaqueBasis(m,counter,target),0);return assistant(target,[{type:'text',text:'Bounded mock response'}],{...zeroUsage,input,output:50,totalTokens:input+50});},requests);
+ try{
+  await f.session.prompt('Route B continuation');assert.equal(requests.length,1);assert.equal(branchState(manager.getBranch()).state.cursorId,boundary,'Foreign generated output must not force an unnecessary slide');
+  assert(requests[0].messages.some(m=>m.role==='assistant'&&m.content?.some?.(c=>c.type==='thinking'&&c.thinkingSignature===signature)),'Projection is counting-only, never changes raw request replay bytes');
+  await f.session.setModel({...f.model,...modelA});await f.session.prompt('Route A continuation');const afterA=branchState(manager.getBranch()).state.cursorId;assert.notEqual(afterA,boundary,'Compatible opaque replay legitimately needs a bounded slide');
+  await f.session.setModel(f.model);await f.session.prompt('Route B again');assert.equal(branchState(manager.getBranch()).state.cursorId,afterA);
+  await f.session.reload();await f.session.prompt('Route B after same-process reload');assert.equal(branchState(manager.getBranch()).state.cursorId,afterA);
+  const positions=new Map(manager.getBranch().map((e,i)=>[e.id,i]));const cursors=manager.getBranch().filter(e=>e.customType==='acm-passive'&&e.data.cursorId).map(e=>positions.get(e.data.cursorId));assert(cursors.every((n,i)=>i===0||n>=cursors[i-1]));
+  for(const ctx of requests){assertPairing(ctx.messages);assert(!JSON.stringify(ctx.messages).includes('Already cropped'));assert(ctx.messages.some(m=>m.role==='toolResult'&&m.toolCallId==='call_fixture|fc_fixture'));}
+  assert.equal(JSON.stringify(manager.getEntry(opaqueID)),rawBefore);assert.equal(manager.getEntry(useful).message.content[1].id,'call_fixture|fc_fixture');
+  const records=manager.getBranch().filter(e=>e.customType==='acm-passive-calibration');assert(records.length>=4);assert(records.every(e=>e.data.version===2&&e.data.countingRule===COUNTING_RULE));assert.equal(summaries(),0);assert.deepEqual(f.errors,[]);
+ }finally{await f.teardown();}
 });
 
 test('a later preview context cannot steal an already-started Main response calibration', async () => {
@@ -601,7 +628,7 @@ test('config persists ratios, synchronizes native settings and both extensions t
     assert.equal(captured.length, 0);
     await f.configCommand('/acm-status');
     const status = JSON.parse(notices.at(-1));
-    assert.equal(status.version, '1.4.2');
+    assert.equal(status.version, '1.4.3');
     assert.equal(status.policy.triggerRatio, 0.85);
     assert.equal(status.policy.targetRatio, 0.75);
     assert.equal(f.extensions.extensions.length, 2);

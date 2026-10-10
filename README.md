@@ -2,7 +2,7 @@
 
 **不摘要、自動滑動的 Pi context window 管理插件。** 原始 transcript 保留在 Pi session；ACM 只調整下一次送給模型的 context，不會呼叫額外模型產生摘要。
 
-版本：`1.4.2`。套件名稱 `pi-acm-passive`；GitHub repo 名稱 `pi_acm`。這不是 npm 的 `pi-acm` 套件。
+版本：`1.4.3`。套件名稱 `pi-acm-passive`；GitHub repo 名稱 `pi_acm`。這不是 npm 的 `pi-acm` 套件。
 
 ## 安裝
 
@@ -15,7 +15,7 @@ pi install git:github.com/peicd100/pi_acm
 建議固定版本安裝：
 
 ```sh
-pi install git:github.com/peicd100/pi_acm@v1.4.2
+pi install git:github.com/peicd100/pi_acm@v1.4.3
 ```
 
 兩者擇一；不要和原來的本機 passive ACM、npm `pi-acm` 或其他 compaction/context 管理插件同時載入。先用 `pi list`、`pi config` 檢查並停用重複插件。Extension 會以 Pi 的 OS 權限執行，安裝前應審閱來源。
@@ -26,7 +26,7 @@ pi install git:github.com/peicd100/pi_acm@v1.4.2
 /acm-status
 ```
 
-1.4.2 在 interactive TUI 的閒置 startup／切模型／回合 settle 邊界自動檢查：新安裝以95/85初始化；已有ACM比例則沿用；已符合就不寫檔。一般使用者不必先輸入初始化指令。明確自訂budget／已關閉compaction時會先確認；拒絕則保留原設定並取消未批准的請求，不使用AI摘要。忙碌或佇列未清空不寫入，等下一個閒置邊界；也可自行執行 `/acm-setup`。
+1.4.3 在 interactive TUI 的閒置 startup／切模型／回合 settle 邊界自動檢查：新安裝以95/85初始化；已有ACM比例則沿用；已符合就不寫檔。一般使用者不必先輸入初始化指令。明確自訂budget／已關閉compaction時會先確認；拒絕則保留原設定並取消未批准的請求，不使用AI摘要。忙碌或佇列未清空不寫入，等下一個閒置邊界；也可自行執行 `/acm-setup`。
 
 自動化不會從print／JSON／SDK／RPC模式寫入personal settings。這些模式需要事先配置，或由有明確agentDir與真正reload action的SDK呼叫 `/acm-setup`。不會把自動setup當模型prompt，沒有初始化模型費用。
 
@@ -55,7 +55,7 @@ pi install .
 
 ## 滑動行為與限制
 
-1.4.2 的新安裝與 reset 預設是 95/85；升版不覆蓋既有自訂比例。高保留量不保證降低延遲，也不修復 provider 串流中斷。Window/config 使用新 versioned module path，避免同 process reload 沿用舊 ESM defaults。
+1.4.3 的新安裝與 reset 預設是 95/85；升版不覆蓋既有自訂比例。高保留量不保證降低延遲，也不修復 provider 串流中斷。Window/config 使用新 versioned module path，避免同 process reload 沿用舊 ESM defaults。
 
 - **Trigger**：校準後的下一次 input 超過有效容量的指定比例，才啟動滑動。
 - **Target**：選擇近期 chronological suffix 時的目標比例；必要內容和完整 tool batch 優先，因此不是精確保留比例。
@@ -68,6 +68,16 @@ pi install .
 - Footer `ACM 40.8%` 使用 Pi native usage；與校準後下一次請求 budget 是不同測量。
 
 Producer 與 independent no-summary guard 的順序固定為 `extensions/index.ts`、`extensions/no-summary-guard.ts`。Guard 會取消 native threshold、overflow、manual compaction 與 tree summary；policy/config 無效時也不允許 fallback AI summary。這是應用程式保護，不是 OS sandbox；不受信任的後載入 extension 可能繞過保護。
+
+## 切換模型／route 與計數
+
+1.4.3 的計數副本會依目標 `provider/api/modelId` 判定 Responses thinking 的 replay 相容性：不同 route 的 encrypted/redacted thinking 不會以舊 generated-output 成本灌入新 budget；仍會送出的可見 summary 保留計數。同 route 的 signed thinking 繼續以原 output 作保守 basis，無可驗證 output 時 fail closed；不解密 signature。
+
+**只改計數，不改原始 session/request messages、signature 或 tool-call/result IDs**。cursor／anchors／pairing／no-summary 規則不重設；來回切 route 不復活舊 prefix。計數目前驗證於 Pi1.1.0 的 `openai-responses`、`openai-codex-responses`、`azure-openai-responses` serializers。其他／custom／virtual API 或未驗證 host 版本維持保守 fallback，不假裝知道實際 wire compatibility。同 provider/api/modelId 背後的 endpoint/account 變化不會被此 tuple 辨識。
+
+校準採 version2＋countingRule，仍按 route 隔離。舊 version1紀錄保留、驗 response binding，但不混入新 basis；未驗證 host 的保守 rule 也不混用 projection rule。新 samples 才更新 high-water factor／offset，provider token 數仍是估算，不保證完全相等。
+
+`/acm-status` 顯示 raw visible、target-route visible、compatible-opaque basis、countingRule／targetRoute／ignored legacy samples。Footer依舊與 Pi native percentage 相同；切 route 後實際 input 降低是正常現象，不會強制顯示原比例或共享 provider cache。改善目的為減少錯估造成的提早裁切，可能保留更多內容而增加實際 input，並非省費用保證。已淘汰內容不會自動恢復。
 
 ## 設定保存與副作用
 
@@ -107,7 +117,7 @@ pi update git:github.com/peicd100/pi_acm
 ```sh
 pi remove git:github.com/peicd100/pi_acm
 # 若安裝的是固定版本：
-pi remove git:github.com/peicd100/pi_acm@v1.4.2
+pi remove git:github.com/peicd100/pi_acm@v1.4.3
 ```
 
 移除後 idle `/reload` 或重啟。**移除 package 不會還原 `/acm-config` 修改的 user settings。** 改回 native compaction 前，請在 `pi config`／settings 中檢查 `acm`、`compaction.reserveTokens`、`keepRecentTokens` 與相關 model override；只調整確定屬於 ACM 的項目，不要用舊備份整份覆蓋後來的其他設定。`/acm-config reset` 是重設 ACM 比例，不是卸載還原。
@@ -125,7 +135,7 @@ npm run test:install
 - Test host 預設從本 repo 的 devDependency 解析，不硬編碼個人 home path；也可設定 `PI_TEST_HOST` 指向已安裝的 Pi coding-agent package 目錄。
 - `test:install` 使用真正的 Pi Git install／tag／list／load／remove，Git URL 只在測試子程序透過 `insteadOf` 導向 disposable local Git repo；**不 push、不碰個人 Pi 設定**。測試包含空白／非 ASCII 路徑。
 - 安裝測試可能透過 npm registry 下載 `gpt-tokenizer`，但不呼叫模型。失敗保留 fixture 並顯示位置；成功刪除 fixture。
-- `npm run test:remote` 可在 disposable Pi 環境驗證真正的 GitHub `v1.4.2` 安裝／載入／移除；需要 GitHub 與 npm registry 網路，不會修改個人 Pi 環境或呼叫 provider。
+- `npm run test:remote` 可在 disposable Pi 環境驗證真正的 GitHub `v1.4.3` 安裝／載入／移除；需要 GitHub 與 npm registry 網路，不會修改個人 Pi 環境或呼叫 provider。
 - Tests 通過不代表 live-provider activation 或 backend capacity 已驗證。
 
 發布流程見 [docs/RELEASING.md](docs/RELEASING.md)。

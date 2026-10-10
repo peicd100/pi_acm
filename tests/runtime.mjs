@@ -20,3 +20,5 @@ const aiEntry = require.resolve.paths('@earendil-works/pi-ai')
   .map(root => join(root, '@earendil-works/pi-ai/dist/index.js')).find(existsSync);
 if (!aiEntry) throw new Error('Pi SDK pi-ai dependency missing; run npm ci. No network fallback.');
 export const ai = await import(pathToFileURL(aiEntry).href);
+// Test-only differential access to the installed host's exported API subpaths.
+export const fromAi = relative => import(pathToFileURL(join(dirname(aiEntry),relative)).href);

@@ -3,11 +3,11 @@ import { createHash, randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent';
-import { buildSessionProjection, sessionEntryToContextMessages, getAgentDir } from '@earendil-works/pi-coding-agent';
+import { buildSessionProjection, sessionEntryToContextMessages, getAgentDir, VERSION as PI_VERSION } from '@earendil-works/pi-coding-agent';
 import { getCurrentSystemMessage } from '@earendil-works/pi-ai';
 import { MARKER, validatePolicy, createCounter, previewMessage, messageKey,
   selectWindow, branchState, applyLegacyRows, applyCursor, assertPairing, atomicGroups, omitFailedAttempts } from '../src/window_v1.4.1.mjs';
-import { CALIBRATION_TYPE, createCalibration, modelKey } from '../src/calibration.mjs';
+import { CALIBRATION_TYPE, createCalibration, modelKey } from '../src/calibration_v1.4.3.mjs';
 import { CONFIG_USAGE, parseConfigCommand, policyForSettings, nativeBudget, assertNativeSettings,
   commitConfig, rollbackConfig, inspectSetup, commitSetup } from '../src/config_v1.4.2.mjs';
 
@@ -18,7 +18,7 @@ export default function passiveWindow(pi: ExtensionAPI) {
   const refreshPolicy = () => { policy = validatePolicy(policyForSettings(basePolicy, pi.getSettings())); return policy; };
   const counter = createCounter(basePolicy);
   let fault: string | undefined;
-  let last: any = { version: '1.4.2', windowMode: 'automatic', manualCheckpointRequired: false,
+  let last: any = { version: '1.4.3', windowMode: 'automatic', manualCheckpointRequired: false,
     before: 0, after: 0, slides: 0, phase: 'startup' };
   let displayedNative: string | undefined;
   let setupQueued=false, setupBusy=false, setupStopped=false;
@@ -60,7 +60,8 @@ export default function passiveWindow(pi: ExtensionAPI) {
       displayedNative = text;
     }
   };
-  const calibration = createCalibration();
+  // Only audited host conversion contracts may lower foreign replay estimates.
+  const calibration = createCalibration({responsesProjection:PI_VERSION==='1.1.0'});
   let pending: any;
   const inFlight = new Map<string, any>();
   const responseKey = (m: any) => JSON.stringify([m.provider, m.api, m.model, m.timestamp]);
@@ -133,7 +134,7 @@ export default function passiveWindow(pi: ExtensionAPI) {
 
   pi.on('session_start', (event, ctx) => {
     fault = undefined;
-    last = { version: '1.4.2', windowMode: 'automatic', manualCheckpointRequired: false,
+    last = { version: '1.4.3', windowMode: 'automatic', manualCheckpointRequired: false,
       before: 0, after: 0, slides: 0, phase: 'startup' };
     try {
       refreshPolicy();
@@ -300,14 +301,16 @@ export default function passiveWindow(pi: ExtensionAPI) {
       const candidate = plan.changed ? { ...nextState, taskAnchorId, cursorId: plan.firstKeptId,
         carriedIds: plan.carriedIds, lastGoodBoundary: { cursorId: state.cursorId,
           carriedIds: [...state.carriedIds], anchorIds: [...state.anchorIds], taskAnchorId: state.taskAnchorId } } : null;
-      pending = { requestId: randomUUID(), modelKey: modelKey(ctx.model),
+      pending = { requestId: randomUUID(), modelKey: modelKey(ctx.model), countingRule:budget.countingRule,
         inputFingerprint: createHash('sha256').update(JSON.stringify(messages.map(messageKey))).digest('hex'),
-        visibleInputTokens: counter.total(messages) - policy.requestMargin, basisTokens: budget.basis(messages),
+        visibleInputTokens: budget.visible(messages), basisTokens: budget.basis(messages),
         baseBoundary: boundaryKey(nextState), candidate };
       fault = undefined;
       last = { ...last, before: plan.before, after, phase: 'calibrated-next-request',
         windowMode: 'automatic', manualCheckpointRequired: false,
-        rawVisibleInputTokens: pending.visibleInputTokens, opaqueBudgetBasisTokens: pending.basisTokens,
+        rawVisibleInputTokens: counter.total(messages)-policy.requestMargin,
+        targetRouteVisibleInputTokens: pending.visibleInputTokens, opaqueBudgetBasisTokens: pending.basisTokens,
+        countingRule:budget.countingRule,
         calibration: budget.describe() };
       renderNativeStatus(ctx);
       pi.events.emit('acm-passive:request-ready', { messages, estimatedTokens: after });

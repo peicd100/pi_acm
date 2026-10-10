@@ -45,10 +45,10 @@ git add .gitignore .gitattributes .github package.json package-lock.json README.
 完成授權、檔案與 index 審查後才操作：
 
 ```sh
-git commit -m "Package passive ACM 1.4.2 for Pi Git installation"
+git commit -m "Package passive ACM 1.4.3 for Pi Git installation"
 git push origin HEAD
-git tag v1.4.2
-git push origin v1.4.2
+git tag v1.4.3
+git push origin v1.4.3
 ```
 
 這些命令須由維護者自行執行或另外明確授權；若 tag 已存在，不要覆蓋或 force push，改用新的版本號。
@@ -60,7 +60,7 @@ git push origin v1.4.2
 也可在全新／可拋棄的 Pi 使用者環境手動測試：
 
 ```sh
-pi install git:github.com/peicd100/pi_acm@v1.4.2
+pi install git:github.com/peicd100/pi_acm@v1.4.3
 pi list
 ```
 

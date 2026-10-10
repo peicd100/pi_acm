@@ -1,3 +1,14 @@
+# Verification — 1.4.3 target-route counting
+
+- Full mocked90/90 PASS. Initial targeted projection/calibration/SDK integration34/34 PASS; final full includes added unaudited-host rule isolation.
+- Differential uses installed Pi1.1.0 Responses serializer for provider/API/model switches and signed/unsigned/empty/redacted cases; no real provider calls.
+- A→B→A plus same-process reload proves no unnecessary foreign opaque cut, legitimate compatible replay cut, monotone cursor, unchanged raw signature/IDs, intact tool pairing and no prefix resurrection.
+- Legacy v1 binding validation/no training, v2 route/rule separation, conservative unknown API/host and same-route unknown-output failclosed PASS. Native footer and old auto-init tests remain PASS.
+- Package and disposable local Git install/tag/list/load/remove PASS. Public refs/CI are independently recorded against release commit; do not infer from local results.
+- Docker live/session/config were not modified/reloaded; no private real input used as test fixture.
+
+## Historical evidence (not current execution authority)
+
 # Verification — 1.4.2 idle auto-init
 
 - Targeted21/21 and full mocked84/84 PASS, no real model/provider traffic.
